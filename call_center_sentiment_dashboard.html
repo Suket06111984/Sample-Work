@@ -1,0 +1,329 @@
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#000}
+.dash{background:#0a0a0a;padding:16px;font-family:var(--font-sans);min-height:100vh}
+.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;padding-bottom:12px;border-bottom:0.5px solid #222}
+.header h1{font-size:16px;font-weight:500;color:#fff}
+.header span{font-size:11px;color:#555}
+.kpi-row{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:16px}
+.kpi{border-radius:10px;padding:14px;border:0.5px solid}
+.kpi .lbl{font-size:10px;font-weight:500;letter-spacing:.05em;text-transform:uppercase;margin-bottom:6px}
+.kpi .val{font-size:24px;font-weight:500;line-height:1}
+.kpi .sub{font-size:10px;margin-top:4px;opacity:.7}
+.kpi1{background:#0d1f0d;border-color:#1a3d1a}.kpi1 .lbl,.kpi1 .sub{color:#4caf50}.kpi1 .val{color:#81c784}
+.kpi2{background:#0d0d1f;border-color:#1a1a3d}.kpi2 .lbl,.kpi2 .sub{color:#5c7cfa}.kpi2 .val{color:#748ffc}
+.kpi3{background:#1f0d0d;border-color:#3d1a1a}.kpi3 .lbl,.kpi3 .sub{color:#f03e3e}.kpi3 .val{color:#ff6b6b}
+.kpi4{background:#1f1a0d;border-color:#3d320a}.kpi4 .lbl,.kpi4 .sub{color:#f59f00}.kpi4 .val{color:#fcc419}
+.kpi5{background:#10181f;border-color:#1a2e3d}.kpi5 .lbl,.kpi5 .sub{color:#22b8cf}.kpi5 .val{color:#3bc9db}
+.filters{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;align-items:center}
+.filters label{font-size:11px;color:#666}
+.filters select{background:#111;color:#ccc;border:0.5px solid #333;border-radius:6px;padding:5px 8px;font-size:11px;cursor:pointer}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px}
+.card{background:#111;border:0.5px solid #222;border-radius:12px;padding:14px}
+.card-title{font-size:11px;font-weight:500;color:#777;letter-spacing:.04em;text-transform:uppercase;margin-bottom:12px}
+.leg{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:10px}
+.leg-item{display:flex;align-items:center;gap:4px;font-size:10px;color:#888}
+.leg-dot{width:9px;height:9px;border-radius:2px}
+</style>
+
+<h2 class="sr-only" style="position:absolute;left:-9999px">Call center sentiment analysis dashboard with 70 records from January 2024</h2>
+
+<div class="dash">
+  <div class="header">
+    <h1>Call center sentiment analysis</h1>
+    <span>Jan 2024 &nbsp;|&nbsp; 70 records</span>
+  </div>
+
+  <div class="filters">
+    <label>Filter by:</label>
+    <select id="fSentiment" onchange="applyFilter()"><option value="">All sentiments</option><option>Very Positive</option><option>Positive</option><option>Neutral</option><option>Negative</option><option>Very Negative</option></select>
+    <select id="fChannel" onchange="applyFilter()"><option value="">All channels</option><option>Call-Center</option><option>Chatbot</option><option>Web</option><option>Email</option></select>
+    <select id="fCenter" onchange="applyFilter()"><option value="">All call centers</option><option>Los Angeles/CA</option><option>Baltimore/MD</option><option>Chicago/IL</option><option>Denver/CO</option></select>
+    <select id="fReason" onchange="applyFilter()"><option value="">All reasons</option><option>Billing Question</option><option>Payments</option><option>Service Outage</option></select>
+  </div>
+
+  <div class="kpi-row">
+    <div class="kpi kpi1"><div class="lbl">Total calls</div><div class="val" id="kTotal">70</div><div class="sub">all records</div></div>
+    <div class="kpi kpi2"><div class="lbl">Avg CSAT</div><div class="val" id="kCsat">5.3</div><div class="sub">out of 10</div></div>
+    <div class="kpi kpi3"><div class="lbl">Below SLA</div><div class="val" id="kSla">9</div><div class="sub">of total calls</div></div>
+    <div class="kpi kpi4"><div class="lbl">Avg duration</div><div class="val" id="kDur">26.3<span style="font-size:13px">m</span></div><div class="sub">per call</div></div>
+    <div class="kpi kpi5"><div class="lbl">Positive rate</div><div class="val" id="kPos">24%</div><div class="sub">positive + very positive</div></div>
+  </div>
+
+  <div class="grid2">
+    <div class="card">
+      <div class="card-title">Sentiment distribution</div>
+      <div class="leg" id="legDonut"></div>
+      <div style="position:relative;height:200px"><canvas id="cDonut" role="img" aria-label="Donut chart showing sentiment distribution">Negative 29, Very Negative 15, Positive 10, Neutral 9, Very Positive 7.</canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Avg CSAT by sentiment</div>
+      <div style="position:relative;height:230px"><canvas id="cCsat" role="img" aria-label="Bar chart of average CSAT score by sentiment category">Very Positive 9.43, Positive 7.7, Neutral 7.0, Negative 4.17, Very Negative 3.07.</canvas></div>
+    </div>
+  </div>
+
+  <div class="grid3">
+    <div class="card">
+      <div class="card-title">Calls by channel</div>
+      <div style="position:relative;height:180px"><canvas id="cChannel" role="img" aria-label="Bar chart of call volume by channel">Call-Center 23, Chatbot 22, Web 17, Email 8.</canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Call reason breakdown</div>
+      <div class="leg" id="legReason"></div>
+      <div style="position:relative;height:150px"><canvas id="cReason" role="img" aria-label="Donut chart of call reasons">Billing Question 50, Payments 12, Service Outage 8.</canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">SLA compliance</div>
+      <div class="leg" id="legSla"></div>
+      <div style="position:relative;height:150px"><canvas id="cSla" role="img" aria-label="Donut chart of SLA compliance">Within SLA 53, Below SLA 9, Above SLA 8.</canvas></div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom:12px">
+    <div class="card-title">Daily call volume &amp; avg CSAT (January 2024)</div>
+    <div style="position:relative;height:180px"><canvas id="cTrend" role="img" aria-label="Dual axis line and bar chart showing daily call volume and average CSAT over January 2024">Daily calls with CSAT trend line.</canvas></div>
+  </div>
+
+  <div class="grid2">
+    <div class="card">
+      <div class="card-title">Call center performance</div>
+      <div style="position:relative;height:200px"><canvas id="cCenter" role="img" aria-label="Grouped bar chart of call center performance by SLA status">Baltimore, Chicago, Denver, Los Angeles by SLA status.</canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Avg call duration by center (min)</div>
+      <div style="position:relative;height:200px"><canvas id="cDur" role="img" aria-label="Horizontal bar chart of average call duration by call center">Baltimore 24, Chicago 27.9, Denver 22.8, Los Angeles 28.6.</canvas></div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+const RAW = [
+  {s:'Neutral',csat:8,ch:'Chatbot',r:'Billing Question',sla:'Within SLA',center:'Chicago/IL',dur:14,date:'01-01'},
+  {s:'Negative',csat:5,ch:'Call-Center',r:'Billing Question',sla:'Within SLA',center:'Los Angeles/CA',dur:32,date:'01-01'},
+  {s:'Negative',csat:3,ch:'Chatbot',r:'Billing Question',sla:'Within SLA',center:'Denver/CO',dur:6,date:'01-02'},
+  {s:'Very Negative',csat:4,ch:'Email',r:'Billing Question',sla:'Below SLA',center:'Los Angeles/CA',dur:26,date:'01-02'},
+  {s:'Positive',csat:8,ch:'Web',r:'Billing Question',sla:'Within SLA',center:'Los Angeles/CA',dur:26,date:'01-02'},
+  {s:'Very Negative',csat:4,ch:'Web',r:'Billing Question',sla:'Within SLA',center:'Baltimore/MD',dur:6,date:'01-03'},
+  {s:'Positive',csat:10,ch:'Call-Center',r:'Billing Question',sla:'Within SLA',center:'Baltimore/MD',dur:17,date:'01-03'},
+  {s:'Very Negative',csat:3,ch:'Chatbot',r:'Billing Question',sla:'Below SLA',center:'Los Angeles/CA',dur:20,date:'01-04'},
+  {s:'Very Negative',csat:3,ch:'Web',r:'Billing Question',sla:'Below SLA',center:'Los Angeles/CA',dur:39,date:'01-04'},
+  {s:'Negative',csat:4,ch:'Call-Center',r:'Billing Question',sla:'Within SLA',center:'Baltimore/MD',dur:18,date:'01-05'},
+  {s:'Positive',csat:5,ch:'Chatbot',r:'Billing Question',sla:'Above SLA',center:'Baltimore/MD',dur:34,date:'01-05'},
+  {s:'Neutral',csat:6,ch:'Web',r:'Billing Question',sla:'Within SLA',center:'Baltimore/MD',dur:22,date:'01-06'},
+  {s:'Negative',csat:6,ch:'Call-Center',r:'Billing Question',sla:'Above SLA',center:'Chicago/IL',dur:10,date:'01-06'},
+  {s:'Negative',csat:4,ch:'Chatbot',r:'Billing Question',sla:'Within SLA',center:'Baltimore/MD',dur:34,date:'01-07'},
+  {s:'Very Negative',csat:4,ch:'Email',r:'Billing Question',sla:'Within SLA',center:'Los Angeles/CA',dur:14,date:'01-07'},
+  {s:'Negative',csat:7,ch:'Call-Center',r:'Billing Question',sla:'Within SLA',center:'Los Angeles/CA',dur:39,date:'01-08'},
+  {s:'Neutral',csat:7,ch:'Chatbot',r:'Payments',sla:'Within SLA',center:'Baltimore/MD',dur:27,date:'01-08'},
+  {s:'Positive',csat:7,ch:'Web',r:'Billing Question',sla:'Within SLA',center:'Baltimore/MD',dur:19,date:'01-08'},
+  {s:'Very Positive',csat:9,ch:'Call-Center',r:'Payments',sla:'Within SLA',center:'Baltimore/MD',dur:26,date:'01-08'},
+  {s:'Negative',csat:4,ch:'Chatbot',r:'Billing Question',sla:'Within SLA',center:'Denver/CO',dur:17,date:'01-09'},
+  {s:'Very Negative',csat:4,ch:'Email',r:'Billing Question',sla:'Below SLA',center:'Los Angeles/CA',dur:22,date:'01-09'},
+  {s:'Negative',csat:3,ch:'Web',r:'Billing Question',sla:'Within SLA',center:'Los Angeles/CA',dur:36,date:'01-10'},
+  {s:'Negative',csat:4,ch:'Chatbot',r:'Service Outage',sla:'Within SLA',center:'Los Angeles/CA',dur:29,date:'01-10'},
+  {s:'Negative',csat:4,ch:'Call-Center',r:'Billing Question',sla:'Within SLA',center:'Baltimore/MD',dur:25,date:'01-11'},
+  {s:'Very Negative',csat:4,ch:'Web',r:'Billing Question',sla:'Within SLA',center:'Baltimore/MD',dur:38,date:'01-11'},
+  {s:'Neutral',csat:7,ch:'Chatbot',r:'Payments',sla:'Within SLA',center:'Los Angeles/CA',dur:36,date:'01-12'},
+  {s:'Positive',csat:7,ch:'Call-Center',r:'Billing Question',sla:'Within SLA',center:'Chicago/IL',dur:12,date:'01-12'},
+  {s:'Positive',csat:7,ch:'Web',r:'Billing Question',sla:'Within SLA',center:'Baltimore/MD',dur:18,date:'01-13'},
+  {s:'Very Positive',csat:7,ch:'Chatbot',r:'Service Outage',sla:'Within SLA',center:'Baltimore/MD',dur:29,date:'01-13'},
+  {s:'Very Positive',csat:10,ch:'Call-Center',r:'Billing Question',sla:'Within SLA',center:'Denver/CO',dur:32,date:'01-14'},
+  {s:'Very Positive',csat:7,ch:'Email',r:'Payments',sla:'Within SLA',center:'Baltimore/MD',dur:18,date:'01-14'},
+  {s:'Neutral',csat:5,ch:'Web',r:'Billing Question',sla:'Within SLA',center:'Los Angeles/CA',dur:22,date:'01-15'},
+  {s:'Negative',csat:6,ch:'Call-Center',r:'Billing Question',sla:'Within SLA',center:'Los Angeles/CA',dur:35,date:'01-15'},
+  {s:'Negative',csat:3,ch:'Chatbot',r:'Service Outage',sla:'Within SLA',center:'Baltimore/MD',dur:25,date:'01-16'},
+  {s:'Very Negative',csat:3,ch:'Web',r:'Billing Question',sla:'Below SLA',center:'Los Angeles/CA',dur:41,date:'01-16'},
+  {s:'Negative',csat:4,ch:'Call-Center',r:'Billing Question',sla:'Within SLA',center:'Baltimore/MD',dur:22,date:'01-17'},
+  {s:'Positive',csat:5,ch:'Email',r:'Payments',sla:'Above SLA',center:'Chicago/IL',dur:36,date:'01-17'},
+  {s:'Neutral',csat:7,ch:'Chatbot',r:'Billing Question',sla:'Within SLA',center:'Baltimore/MD',dur:28,date:'01-18'},
+  {s:'Very Positive',csat:8,ch:'Web',r:'Billing Question',sla:'Above SLA',center:'Baltimore/MD',dur:16,date:'01-18'},
+  {s:'Negative',csat:5,ch:'Call-Center',r:'Service Outage',sla:'Within SLA',center:'Los Angeles/CA',dur:26,date:'01-19'},
+  {s:'Negative',csat:6,ch:'Chatbot',r:'Billing Question',sla:'Within SLA',center:'Baltimore/MD',dur:31,date:'01-19'},
+  {s:'Negative',csat:5,ch:'Web',r:'Billing Question',sla:'Within SLA',center:'Los Angeles/CA',dur:22,date:'01-20'},
+  {s:'Negative',csat:6,ch:'Call-Center',r:'Payments',sla:'Above SLA',center:'Baltimore/MD',dur:34,date:'01-20'},
+  {s:'Negative',csat:2,ch:'Email',r:'Billing Question',sla:'Within SLA',center:'Los Angeles/CA',dur:19,date:'01-21'},
+  {s:'Very Negative',csat:3,ch:'Chatbot',r:'Billing Question',sla:'Below SLA',center:'Los Angeles/CA',dur:38,date:'01-21'},
+  {s:'Negative',csat:3,ch:'Web',r:'Service Outage',sla:'Below SLA',center:'Los Angeles/CA',dur:43,date:'01-22'},
+  {s:'Negative',csat:3,ch:'Call-Center',r:'Billing Question',sla:'Within SLA',center:'Baltimore/MD',dur:29,date:'01-22'},
+  {s:'Very Positive',csat:9,ch:'Chatbot',r:'Billing Question',sla:'Within SLA',center:'Baltimore/MD',dur:16,date:'01-23'},
+  {s:'Positive',csat:6,ch:'Web',r:'Payments',sla:'Within SLA',center:'Denver/CO',dur:38,date:'01-23'},
+  {s:'Negative',csat:7,ch:'Call-Center',r:'Billing Question',sla:'Within SLA',center:'Los Angeles/CA',dur:29,date:'01-24'},
+  {s:'Neutral',csat:5,ch:'Email',r:'Billing Question',sla:'Within SLA',center:'Baltimore/MD',dur:16,date:'01-24'},
+  {s:'Positive',csat:6,ch:'Chatbot',r:'Service Outage',sla:'Within SLA',center:'Chicago/IL',dur:18,date:'01-24'},
+  {s:'Very Negative',csat:5,ch:'Web',r:'Billing Question',sla:'Within SLA',center:'Baltimore/MD',dur:28,date:'01-24'},
+  {s:'Negative',csat:5,ch:'Call-Center',r:'Billing Question',sla:'Within SLA',center:'Los Angeles/CA',dur:34,date:'01-25'},
+  {s:'Positive',csat:5,ch:'Chatbot',r:'Payments',sla:'Within SLA',center:'Baltimore/MD',dur:19,date:'01-25'},
+  {s:'Negative',csat:3,ch:'Web',r:'Billing Question',sla:'Within SLA',center:'Baltimore/MD',dur:37,date:'01-26'},
+  {s:'Very Negative',csat:4,ch:'Call-Center',r:'Billing Question',sla:'Below SLA',center:'Los Angeles/CA',dur:31,date:'01-26'},
+  {s:'Negative',csat:5,ch:'Chatbot',r:'Billing Question',sla:'Within SLA',center:'Chicago/IL',dur:23,date:'01-27'},
+  {s:'Positive',csat:6,ch:'Email',r:'Payments',sla:'Above SLA',center:'Denver/CO',dur:28,date:'01-27'},
+  {s:'Neutral',csat:7,ch:'Web',r:'Billing Question',sla:'Within SLA',center:'Los Angeles/CA',dur:21,date:'01-28'},
+  {s:'Very Positive',csat:7,ch:'Call-Center',r:'Billing Question',sla:'Within SLA',center:'Baltimore/MD',dur:32,date:'01-28'},
+  {s:'Negative',csat:5,ch:'Chatbot',r:'Service Outage',sla:'Within SLA',center:'Baltimore/MD',dur:18,date:'01-29'},
+  {s:'Negative',csat:5,ch:'Web',r:'Billing Question',sla:'Below SLA',center:'Los Angeles/CA',dur:35,date:'01-29'},
+  {s:'Negative',csat:4,ch:'Call-Center',r:'Billing Question',sla:'Within SLA',center:'Los Angeles/CA',dur:26,date:'01-29'},
+  {s:'Very Negative',csat:6,ch:'Email',r:'Payments',sla:'Within SLA',center:'Baltimore/MD',dur:22,date:'01-29'},
+  {s:'Negative',csat:4,ch:'Chatbot',r:'Billing Question',sla:'Within SLA',center:'Baltimore/MD',dur:28,date:'01-29'},
+  {s:'Negative',csat:5,ch:'Web',r:'Billing Question',sla:'Within SLA',center:'Los Angeles/CA',dur:32,date:'01-30'},
+  {s:'Negative',csat:6,ch:'Call-Center',r:'Billing Question',sla:'Within SLA',center:'Chicago/IL',dur:39,date:'01-30'},
+  {s:'Negative',csat:4,ch:'Chatbot',r:'Billing Question',sla:'Within SLA',center:'Los Angeles/CA',dur:18,date:'01-31'},
+  {s:'Negative',csat:4,ch:'Web',r:'Service Outage',sla:'Within SLA',center:'Los Angeles/CA',dur:27,date:'01-31'}
+];
+
+const SCOL = {'Very Positive':'#51cf66','Positive':'#94d82d','Neutral':'#fcc419','Negative':'#ff6b6b','Very Negative':'#f03e3e'};
+const CHCOL = {'Call-Center':'#748ffc','Chatbot':'#3bc9db','Web':'#f783ac','Email':'#ffa94d'};
+const RCOL = {'Billing Question':'#7950f2','Payments':'#22b8cf','Service Outage':'#ff6b6b'};
+const SLACOL = {'Within SLA':'#51cf66','Below SLA':'#ff6b6b','Above SLA':'#fcc419'};
+
+let charts = {};
+
+function getFiltered(){
+  const fs = document.getElementById('fSentiment').value;
+  const fc = document.getElementById('fChannel').value;
+  const fct = document.getElementById('fCenter').value;
+  const fr = document.getElementById('fReason').value;
+  return RAW.filter(d =>
+    (!fs || d.s===fs) && (!fc || d.ch===fc) && (!fct || d.center===fct) && (!fr || d.r===fr)
+  );
+}
+
+function avg(arr){return arr.length?arr.reduce((a,b)=>a+b,0)/arr.length:0}
+
+function buildLegend(id, items){
+  document.getElementById(id).innerHTML = items.map(([label,color,val])=>
+    `<span class="leg-item"><span class="leg-dot" style="background:${color}"></span>${label}${val!==undefined?' '+val:''}</span>`
+  ).join('');
+}
+
+function updateKPIs(data){
+  document.getElementById('kTotal').textContent = data.length;
+  document.getElementById('kCsat').textContent = avg(data.map(d=>d.csat)).toFixed(1);
+  document.getElementById('kSla').textContent = data.filter(d=>d.sla==='Below SLA').length;
+  document.getElementById('kDur').innerHTML = avg(data.map(d=>d.dur)).toFixed(1)+'<span style="font-size:13px">m</span>';
+  const pos = data.filter(d=>d.s==='Positive'||d.s==='Very Positive').length;
+  document.getElementById('kPos').textContent = data.length?Math.round(pos/data.length*100)+'%':'0%';
+}
+
+function destroyChart(id){if(charts[id]){charts[id].destroy();delete charts[id];}}
+
+function buildDonut(id, data, colorMap){
+  destroyChart(id);
+  const counts = {};
+  data.forEach(d=>{const k=id==='cDonut'?d.s:id==='cReason'?d.r:d.sla; counts[k]=(counts[k]||0)+1;});
+  const labels = Object.keys(counts);
+  const vals = labels.map(l=>counts[l]);
+  const colors = labels.map(l=>colorMap[l]||'#888');
+  charts[id] = new Chart(document.getElementById(id),{
+    type:'doughnut',
+    data:{labels,datasets:[{data:vals,backgroundColor:colors,borderWidth:2,borderColor:'#111'}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'65%',plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.label}: ${ctx.raw} (${Math.round(ctx.raw/vals.reduce((a,b)=>a+b,0)*100)}%)`}}}}
+  });
+  if(id==='cDonut') buildLegend('legDonut', labels.map((l,i)=>[l,colors[i],vals[i]]));
+  if(id==='cReason') buildLegend('legReason', labels.map((l,i)=>[l,colors[i],vals[i]]));
+  if(id==='cSla') buildLegend('legSla', labels.map((l,i)=>[l,colors[i],vals[i]]));
+}
+
+function buildCsatBar(data){
+  destroyChart('cCsat');
+  const order=['Very Positive','Positive','Neutral','Negative','Very Negative'];
+  const avgs = order.map(s=>{
+    const arr = data.filter(d=>d.s===s).map(d=>d.csat);
+    return arr.length?+avg(arr).toFixed(2):0;
+  });
+  charts['cCsat'] = new Chart(document.getElementById('cCsat'),{
+    type:'bar',
+    data:{labels:order,datasets:[{data:avgs,backgroundColor:order.map(s=>SCOL[s]),borderWidth:0,borderRadius:4}]},
+    options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{min:0,max:10,ticks:{color:'#666',font:{size:10}},grid:{color:'#1a1a1a'}},y:{ticks:{color:'#aaa',font:{size:10}},grid:{display:false}}}}
+  });
+}
+
+function buildChannelBar(data){
+  destroyChart('cChannel');
+  const ch=['Call-Center','Chatbot','Web','Email'];
+  const vals = ch.map(c=>data.filter(d=>d.ch===c).length);
+  charts['cChannel'] = new Chart(document.getElementById('cChannel'),{
+    type:'bar',
+    data:{labels:ch,datasets:[{data:vals,backgroundColor:ch.map(c=>CHCOL[c]),borderWidth:0,borderRadius:4}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#aaa',font:{size:10}},grid:{display:false}},y:{ticks:{color:'#666',font:{size:10}},grid:{color:'#1a1a1a'}}}}
+  });
+}
+
+function buildTrend(data){
+  destroyChart('cTrend');
+  const dateMap={};
+  data.forEach(d=>{
+    if(!dateMap[d.date]) dateMap[d.date]={count:0,csatSum:0};
+    dateMap[d.date].count++;
+    dateMap[d.date].csatSum+=d.csat;
+  });
+  const dates=Object.keys(dateMap).sort();
+  const counts=dates.map(d=>dateMap[d].count);
+  const avgs=dates.map(d=>+(dateMap[d].csatSum/dateMap[d].count).toFixed(2));
+  charts['cTrend'] = new Chart(document.getElementById('cTrend'),{
+    type:'bar',
+    data:{labels:dates,datasets:[
+      {type:'bar',label:'Calls',data:counts,backgroundColor:'#1a3a5c',borderWidth:0,yAxisID:'y'},
+      {type:'line',label:'Avg CSAT',data:avgs,borderColor:'#fcc419',backgroundColor:'transparent',pointBackgroundColor:'#fcc419',pointRadius:2,borderWidth:2,tension:.3,yAxisID:'y2'}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{
+      x:{ticks:{color:'#555',font:{size:9},maxRotation:45,autoSkip:true,maxTicksLimit:16},grid:{display:false}},
+      y:{ticks:{color:'#666',font:{size:9}},grid:{color:'#1a1a1a'},title:{display:true,text:'Calls',color:'#555',font:{size:9}}},
+      y2:{position:'right',min:0,max:10,ticks:{color:'#fcc419',font:{size:9}},grid:{display:false},title:{display:true,text:'CSAT',color:'#fcc419',font:{size:9}}}
+    }}
+  });
+}
+
+function buildCenterBar(data){
+  destroyChart('cCenter');
+  const centers=['Baltimore/MD','Chicago/IL','Denver/CO','Los Angeles/CA'];
+  const slaTypes=['Within SLA','Below SLA','Above SLA'];
+  const datasets=slaTypes.map(sla=>({
+    label:sla,
+    data:centers.map(c=>data.filter(d=>d.center===c&&d.sla===sla).length),
+    backgroundColor:SLACOL[sla],borderWidth:0,borderRadius:3
+  }));
+  charts['cCenter'] = new Chart(document.getElementById('cCenter'),{
+    type:'bar',
+    data:{labels:centers.map(c=>c.split('/')[0]),datasets},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{
+      x:{stacked:true,ticks:{color:'#aaa',font:{size:10}},grid:{display:false}},
+      y:{stacked:true,ticks:{color:'#666',font:{size:10}},grid:{color:'#1a1a1a'}}
+    }}
+  });
+}
+
+function buildDurBar(data){
+  destroyChart('cDur');
+  const centers=['Baltimore/MD','Chicago/IL','Denver/CO','Los Angeles/CA'];
+  const vals=centers.map(c=>{
+    const arr=data.filter(d=>d.center===c).map(d=>d.dur);
+    return arr.length?+avg(arr).toFixed(1):0;
+  });
+  charts['cDur'] = new Chart(document.getElementById('cDur'),{
+    type:'bar',
+    data:{labels:centers.map(c=>c.split('/')[0]),datasets:[{data:vals,backgroundColor:['#9775fa','#3bc9db','#ffa94d','#f783ac'],borderWidth:0,borderRadius:4}]},
+    options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false}},scales:{
+      x:{min:0,max:35,ticks:{color:'#666',font:{size:10}},grid:{color:'#1a1a1a'}},
+      y:{ticks:{color:'#aaa',font:{size:10}},grid:{display:false}}
+    }}
+  });
+}
+
+function applyFilter(){
+  const data = getFiltered();
+  updateKPIs(data);
+  buildDonut('cDonut',data,SCOL);
+  buildDonut('cReason',data,RCOL);
+  buildDonut('cSla',data,SLACOL);
+  buildCsatBar(data);
+  buildChannelBar(data);
+  buildTrend(data);
+  buildCenterBar(data);
+  buildDurBar(data);
+}
+
+applyFilter();
+</script>
